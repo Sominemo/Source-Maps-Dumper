@@ -17,7 +17,7 @@ A simple CLI script to find source maps in a HAR dump and download them.
 - Clone this repo
 - `dart run source_maps_dumper <args>`
 
-Or you can get a Windows executable from Releases page.
+Or you can get an executable from Releases page.
 
 ### Create a HAR dump in Chrome
 Chrome DevTools > Network Tab > "Export HAR..." button
