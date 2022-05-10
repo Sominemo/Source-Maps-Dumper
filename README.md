@@ -11,6 +11,7 @@ A simple CLI script to find source maps in a HAR dump and download them.
 2. Positional parameter: destination folder. Will be created, if doesn't exist.
 - `--save-all`: Extract all files, even if they don't have source maps.
 - `--ignore-errors`: Download source maps even if response code is not `200 OK`.
+- `--assume-url`: Assume that source map URLs are &lt;url&gt;.map files if not specified.
 
 ### To run from `.dart` file:
 - Clone this repo

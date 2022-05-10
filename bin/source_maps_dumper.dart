@@ -7,9 +7,10 @@ import 'package:http/http.dart' as http;
 void main(List<String> arguments) async {
   if (arguments.length < 2) {
     print(
-      '''Usage: source_maps_dumper path/to/file.har output_dir [--save-all] [--ignore-errors]
+      '''Usage: source_maps_dumper path/to/file.har output_dir [--save-all] [--ignore-errors] [--assume-url]
 \t--save-all\tExtract all files, even if they don't have source maps
-\t--ignore-errors\tDownload source maps even if response code is not 200 OK''',
+\t--ignore-errors\tDownload source maps even if response code is not 200 OK
+\t--assume-url\tAssume that source map URLs are <url>.map files if not specified''',
     );
 
     return;
@@ -17,6 +18,7 @@ void main(List<String> arguments) async {
 
   final saveAllScripts = arguments.contains('--save-all');
   final ignoreErrors = arguments.contains('--ignore-errors');
+  final assumeUrl = arguments.contains('--assume-url');
 
   print("Parsing HAR...");
   Object? har;
@@ -74,19 +76,32 @@ void main(List<String> arguments) async {
       continue;
     }
 
-    final contentText = (content)['text'] as String;
-
-    if (!contentText.contains(
-        'sourceMappingURL=', max(contentText.length - 500, 0))) {
-      continue;
-    }
-
+    var contentText = (content)['text'] as String;
     final url = Uri.parse(request['url'] as String);
 
     if (saveAllScripts) await saveFileWithUrl(contentText, url, arguments[1]);
 
-    final fullMatch = RegExp(r'sourceMappingURL=([^\s]+)$', multiLine: true)
-        .allMatches(contentText);
+    if (!contentText.contains(
+        'sourceMappingURL=', max(contentText.length - 500, 0))) {
+      if (assumeUrl &&
+          ((content.containsKey('mimeType') &&
+              (content['mimeType'] as String).contains('javascript')))) {
+        contentText += '\n//# sourceMappingURL=${url.replace(
+              pathSegments: url.pathSegments
+                  .take(max(url.pathSegments.length - 1, 0))
+                  .followedBy([
+                (url.pathSegments.isEmpty ? '' : url.pathSegments.last) + '.map'
+              ]),
+            ).toString()}';
+      } else {
+        continue;
+      }
+    }
+
+    var fullMatch =
+        RegExp(r'sourceMappingURL=([^\s]+?)(\*\/)?$', multiLine: true)
+            .allMatches(contentText)
+            .map((e) => e[1]!);
 
     for (var match in fullMatch) {
       clearProgress();
@@ -94,12 +109,14 @@ void main(List<String> arguments) async {
       updateProgress(processed, total, found, saved);
 
       try {
-        final mapUrl = (match[1] as String).contains('://')
-            ? Uri.parse(match[1] as String)
+        final mapUrl = match.contains('://')
+            ? Uri.parse(match)
             : url.replace(
-                pathSegments: url.pathSegments
-                    .sublist(0, url.pathSegments.length - 1)
-                    .followedBy((match[1] as String).split('/')));
+                pathSegments: (url.pathSegments.isEmpty
+                        ? <String>[]
+                        : url.pathSegments
+                            .sublist(0, url.pathSegments.length - 1))
+                    .followedBy(match.split('/')));
 
         final headers = <String, String>{};
 
