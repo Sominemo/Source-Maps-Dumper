@@ -146,6 +146,7 @@ void main(List<String> arguments) async {
   }
 
   clearProgress();
+  processed++;
   updateProgress(processed, total, found, saved);
 }
 
@@ -163,7 +164,8 @@ void clearProgress() {
 
 void updateProgress(processed, total, found, saved) {
   processed--;
-  final percent = (processed / total * 100).toStringAsFixed(2);
+  final percent =
+      (total == 0 ? 100 : (processed / total * 100)).toStringAsFixed(2);
   final message =
       '$percent% done ($processed/$total, $found found, $saved saved)';
   lastMessageLength = message.length;
