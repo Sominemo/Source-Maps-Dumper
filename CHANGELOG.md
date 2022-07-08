@@ -1,3 +1,7 @@
+## 1.1.1
+
+- Ignore filesystem errors
+
 ## 1.1.0
 
 - Added `--assume-url` option

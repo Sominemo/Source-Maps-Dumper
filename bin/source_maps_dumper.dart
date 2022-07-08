@@ -168,9 +168,17 @@ void main(List<String> arguments) async {
 }
 
 Future<void> saveFileWithUrl(String content, Uri path, String p) async {
-  final file = File(p + '/' + path.host + '/' + path.path);
-  await file.create(recursive: true);
-  await file.writeAsString(content);
+  File file = File(p + '/' + path.host + '/' + path.path);
+  try {
+    if (await file.exists()) {
+      file = File(file.path + '_INDEX');
+    }
+
+    await file.create(recursive: true);
+    await file.writeAsString(content);
+  } catch (e) {
+    print("Could not write file: $e");
+  }
 }
 
 int lastMessageLength = 0;
